@@ -86,6 +86,109 @@ const obj = {
     }
     sayName() // 결과 안뜸 : window.name
 
-    sayName.bind({name: 'zerocho'})() // zerocho --> this를 바꿔주는 bind 함수
-    sayName.apply({name: 'zerocho'}) // zerocho --> this를 바꿔주는 apply
-    sayName.call({name: 'zerocho'}) // zerocho --> this를 바꿔주는 call
+    sayName.bind({name: 'zerocho'})() // zerocho --> this를 바꿔주는 bind 함수 (this만 바꿔줌. 호출 따로 해야 함)
+    sayName.apply({name: 'zerocho'}) // zerocho --> this를 바꿔주는 apply (호출까지 해줌)
+    sayName.call({name: 'zerocho'}) // zerocho --> this를 바꿔주는 call (호출까지 해줌)
+
+    // a.apply(window) === a.bind(window)() === a.call(window)
+
+// call 스택 분석하기
+    const obj = {
+      name: 'zerocho',
+      sayName() {
+        console.log(this.name);
+        const inner() => {
+          console.log(this.name)
+        }
+        inner()
+      },
+    };
+    obj.sayName(); //zerocho
+
+    [1단계]
+    |             |
+    |             |
+    |             |
+    |__anonymous__| this -> window
+
+    [2단계]
+    |             |
+    |             |
+    | obj.sayName | this -> object
+    |__anonymous__| this -> window
+
+    [3단계]
+    |             |
+    |    log      | // zerocho
+    | obj.sayName | this -> object
+    |__anonymous__| this -> window
+
+    [4단계]
+    |             |
+    |             | -> log 호출 스택에서 빠져나감
+    | obj.sayName | this -> object
+    |__anonymous__| this -> window
+
+    [5단계]
+    |    inner    | // this -> object, 즉 zerocho(화살표 함수이므로 부모를 가져옴)
+    |             | 
+    | obj.sayName | this -> object
+    |__anonymous__| this -> window
+
+    [6단계]
+    |     log     | // zerocho
+    |    inner    | // this -> object, 즉 zerocho(화살표 함수이므로 부모를 가져옴)
+    |             | 
+    | obj.sayName | this -> object
+    |__anonymous__| this -> window
+
+
+// 만약 inner가 function이면 어떻게 달라질까?
+const obj = {
+    name: 'zerocho',
+    sayName() {
+      console.log(this.name);
+      function inner() {
+        console.log(this.name)
+      }
+      inner()
+    },
+  };
+  obj.sayName(); //zerocho
+
+  [1단계]
+  |             |
+  |             |
+  |             |
+  |__anonymous__| this -> window
+
+  [2단계]
+  |             |
+  |             |
+  | obj.sayName | this -> object
+  |__anonymous__| this -> window
+
+  [3단계]
+  |             |
+  |    log      | // zerocho
+  | obj.sayName | this -> object
+  |__anonymous__| this -> window
+
+  [4단계]
+  |             |
+  |             | -> log 호출 스택에서 빠져나감
+  | obj.sayName | this -> object
+  |__anonymous__| this -> window
+
+  [5단계]
+  |    inner    | // this -> window(화살표 함수 아니므로)
+  |             | 
+  | obj.sayName | this -> object
+  |__anonymous__| this -> window
+
+  [6단계]
+  |     log     | // zerocho
+  |    inner    | // this -> window(화살표 함수 아니므로)
+  |             | 
+  | obj.sayName | this -> object
+  |__anonymous__| this -> window
